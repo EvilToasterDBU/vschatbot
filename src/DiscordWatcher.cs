@@ -22,10 +22,10 @@ namespace vschatbot.src
     {
         public static ICoreServerAPI Api;
 
-        private ICoreServerAPI api 
+        private ICoreServerAPI api
         {
             get => Api;
-            set => Api = value; 
+            set => Api = value;
         }
         private ModConfig config;
         private DiscordClient client;
@@ -34,6 +34,8 @@ namespace vschatbot.src
 
         private dynamic lastData;
         private object temporalSystem;
+
+        private const string CONFIGNAME = "vschatbot.json";
 
         public static Dictionary<string, DateTime> connectTimeDict = new Dictionary<string, DateTime>();
 
@@ -46,7 +48,7 @@ namespace vschatbot.src
         {
             try
             {
-                this.config = api.LoadModConfig<ModConfig>("vschatbot.json");
+                this.config = api.LoadModConfig<ModConfig>(CONFIGNAME);
             }
             catch (Exception e)
             {
@@ -56,14 +58,14 @@ namespace vschatbot.src
 
             if (this.config == null)
             {
-                api.Server.LogNotification("vschatbot: non-existant modconfig at vschatbot.json, creating default and shutting down...");
-                api.StoreModConfig(new ModConfig() { Token = "insert bot token here" }, "vschatbot.json");
+                api.Server.LogNotification($"vschatbot: non-existant modconfig at 'ModConfig/{CONFIGNAME}', creating default and disabling mod...");
+                api.StoreModConfig(new ModConfig(), CONFIGNAME);
 
                 return;
             }
             else if (this.config.Token == "insert bot token here" || this.config.ChannelId == default || this.config.ServerId == default)
             {
-                api.Server.LogError("vschatbot: invalid modconfig at vschatbot.json!");
+                api.Server.LogError($"vschatbot: invalid modconfig at 'ModConfig/{CONFIGNAME}'!");
                 return;
             }
 
@@ -74,18 +76,149 @@ namespace vschatbot.src
             this.api.Event.PlayerChat += Event_PlayerChat;
             this.api.Event.PlayerJoin += Event_PlayerJoin;
             this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
-            this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
-            this.api.Event.ServerRunPhase(EnumServerRunPhase.Shutdown, Event_ServerShutdown);
+            if (this.config.SendServerMessages)
+            {
+                this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
+                this.api.Event.ServerRunPhase(EnumServerRunPhase.Shutdown, Event_ServerShutdown);
+            }
+            if (this.config.SendDeathMessages)
+                this.api.Event.PlayerDeath += Event_PlayerDeath;
+        }
+
+        //Shout-out to Milo for texts
+        private void Event_PlayerDeath(IServerPlayer byPlayer, DamageSource damageSource)
+        {
+            var deathMessage = (byPlayer?.PlayerName ?? "Unknown player") + " ";
+            if (damageSource == null)
+                deathMessage += "was killed by the unknown.";
+            else
+            {
+                switch (damageSource.Type)
+                {
+                    case EnumDamageType.Gravity:
+                        deathMessage += "smashed into the ground";
+                        break;
+                    case EnumDamageType.Fire:
+                        deathMessage += "burned to death";
+                        break;
+                    case EnumDamageType.Crushing:
+                    case EnumDamageType.BluntAttack:
+                        deathMessage += "was crushed";
+                        break;
+                    case EnumDamageType.SlashingAttack:
+                        deathMessage += "was sliced open";
+                        break;
+                    case EnumDamageType.PiercingAttack:
+                        deathMessage += "was pierced through";
+                        break;
+                    case EnumDamageType.Suffocation:
+                        deathMessage += "suffocated to death";
+                        break;
+                    case EnumDamageType.Heal:
+                        deathMessage += "was somehow *healed* to death";
+                        break;
+                    case EnumDamageType.Poison:
+                        deathMessage += "was poisoned";
+                        break;
+                    case EnumDamageType.Hunger:
+                        deathMessage += "starved to death";
+                        break;
+                    default:
+                        deathMessage += "was killed";
+                        break;
+                }
+
+                deathMessage += " ";
+
+                switch (damageSource.Source)
+                {
+                    case EnumDamageSource.Block:
+                        deathMessage += "by a block.";
+                        break;
+                    case EnumDamageSource.Player:
+                        deathMessage += "when they failed at PVP.";
+                        break;
+                    case EnumDamageSource.Fall:
+                        deathMessage += "when they fell to their doom.";
+                        break;
+                    case EnumDamageSource.Drown:
+                        deathMessage += "when they tried to breath in water.";
+                        break;
+                    case EnumDamageSource.Revive:
+                        deathMessage += "just as they respawned.";
+                        break;
+                    case EnumDamageSource.Void:
+                        deathMessage += "when they fell screaming into the abyss.";
+                        break;
+                    case EnumDamageSource.Suicide:
+                        deathMessage += "when they killed themselves.";
+                        break;
+                    case EnumDamageSource.Internal:
+                        deathMessage += "when they ran afoul of the game mechanics.";
+                        break;
+                    case EnumDamageSource.Entity:
+                        switch (damageSource.SourceEntity.Code.Path)
+                        {
+                            case "wolf-male":
+                            case "wolf-female":
+                                deathMessage += "and eaten by a wolf.";
+                                break;
+                            case "pig-wild-male":
+                                deathMessage += "by a boar.";
+                                break;
+                            case "pig-wild-female":
+                                deathMessage += "by a sow.";
+                                break;
+                            case "sheep-bighorn-female":
+                            case "sheep-bighorn-male":
+                                deathMessage += "by a sheep.";
+                                break;
+                            case "chicken-rooster":
+                                deathMessage += "by a... chicken.";
+                                break;
+                            case "locust":
+                                deathMessage += "by a locust.";
+                                break;
+                            case "drifter":
+                                deathMessage += "by a drifter.";
+                                break;
+                            case "beemob":
+                                deathMessage += "by a swarm of bees.";
+                                break;
+                            default:
+                                deathMessage += "by a monster.";
+                                break;
+                        }
+                        break;
+                    case EnumDamageSource.Explosion:
+                        deathMessage += "when they stood by a bomb.";
+                        break;
+                    case EnumDamageSource.Machine:
+                        deathMessage += "when they got their hands stuck in a machine.";
+                        break;
+                    case EnumDamageSource.Unknown:
+                        deathMessage += "when they encountered the unknown.";
+                        break;
+                    case EnumDamageSource.Weather:
+                        deathMessage += "when the weather itself suddenly struck.";
+                        break;
+                    default:
+                        deathMessage += "by the unknown.";
+                        break;
+                }
+            }
+
+            sendDiscordMessage(deathMessage);
         }
 
         private void Event_ServerShutdown()
         {
-            sendDiscordMessage($"Server is shutting down. Goodbye!");
+            sendDiscordMessage(this.config.TEXT_ServerStop);
         }
 
         private void Event_ServerStartup()
         {
-            sendDiscordMessage($"Server is now up and running. Come on in!");
+            sendDiscordMessage(this.config.TEXT_ServerStart);
         }
 
         private void Event_PlayerDisconnect(IServerPlayer byPlayer)
@@ -159,10 +292,9 @@ namespace vschatbot.src
 
         private void Event_SaveGameLoaded()
         {
-            temporalSystem = api.ModLoader.GetModSystem<SystemTemporalStability>();
-
-            if (api.World.Config.GetString("temporalStorms") != "off")
+            if (this.config.SendStormNotification && api.World.Config.GetString("temporalStorms") != "off")
             {
+                temporalSystem = api.ModLoader.GetModSystem<SystemTemporalStability>();
                 api.Event.RegisterGameTickListener(onTempStormTick, 5000);
             }
         }
@@ -175,7 +307,7 @@ namespace vschatbot.src
             if (lastData?.stormDayNotify == 1 && data.stormDayNotify == 0)
             {
                 var embed = new DiscordEmbedBuilder()
-                .WithTitle("Harketh the storm doth come, Wary be thine self, as for thy own end be near.")
+                .WithTitle(this.config.TEXT_StormBegin)
                 .WithColor(DiscordColor.Red);
 
                 sendDiscordMessage(embed: embed);
@@ -185,7 +317,7 @@ namespace vschatbot.src
             if (lastData?.stormDayNotify == 0 && data.stormDayNotify == -1)
             {
                 var embed = new DiscordEmbedBuilder()
-                .WithTitle("The temporal storm seems to be waning")
+                .WithTitle(this.config.TEXT_StormEnd)
                 .WithColor(DiscordColor.Green);
 
                 sendDiscordMessage(embed: embed);
@@ -196,7 +328,7 @@ namespace vschatbot.src
 
         private Task Client_MessageCreated(MessageCreateEventArgs e)
         {
-            if (e.Author.IsBot || e.Channel?.Id != this.discordChannel.Id || (e.Message.Content.StartsWith("!") && e.Message.Content.Length > 1 ) )
+            if (e.Author.IsBot || e.Channel?.Id != this.discordChannel.Id || (e.Message.Content.StartsWith("!") && e.Message.Content.Length > 1))
                 return Task.FromResult(true);
 
             var content = e.Message.Content;
@@ -228,7 +360,7 @@ namespace vschatbot.src
                 return Task.FromResult(true);
             }
 
-            api.SendMessageToGroup(GlobalConstants.AllChatGroups, $"Discord|<strong>{e.Author.Username}</strong>: {content.Replace(">", "&gt;").Replace("<", "&lt;")}", EnumChatType.Notification);
+            api.SendMessageToGroup(GlobalConstants.GeneralChatGroup, $"Discord|<strong>{e.Author.Username}</strong>: {content.Replace(">", "&gt;").Replace("<", "&lt;")}", EnumChatType.OthersMessage);
 
             return Task.FromResult(true);
         }
@@ -246,11 +378,10 @@ namespace vschatbot.src
         {
             if (channelId == GlobalConstants.GeneralChatGroup)
             {
-                var foundText = new Regex(@".*?> (.+)$").Match(message);
-                if (!foundText.Success)
+                if (string.IsNullOrEmpty(message))
                     return;
 
-                sendDiscordMessage($"**{byPlayer.PlayerName}**: {foundText.Groups[1].Value}");
+                sendDiscordMessage($"{message.Replace("<strong", "**").Replace("</strong>", "**")}");
             }
         }
     }

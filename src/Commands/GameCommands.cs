@@ -33,7 +33,7 @@ namespace vschatbot.src.Commands
         [Description("Shows the currently online players and their play time")]
         public async Task OnlinePlayersAsync(CommandContext context)
         {
-            var clients = api.World.AllOnlinePlayers.Select(x => new { x.PlayerName, SessionLengthInMinutes = (int)(DateTime.Now.AddHours(2) - DiscordWatcher.connectTimeDict[x.PlayerUID]).TotalMinutes });
+            var clients = api.World.AllOnlinePlayers.Select(x => new { x.PlayerName, SessionLengthInMinutes = (int)(DateTime.Now - DiscordWatcher.connectTimeDict[x.PlayerUID]).TotalMinutes });
 
             var embed = new DiscordEmbedBuilder().WithTitle("Currently online players:")
                 .WithDescription(clients.Select(x => $"Name: '{x.PlayerName}'" +

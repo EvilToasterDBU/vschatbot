@@ -339,7 +339,8 @@ namespace vschatbot.src
 
                 foreach (Match match in matches)
                 {
-                    var id = ulong.Parse(match.Groups[1].Value);
+                    if (!match.Success || !ulong.TryParse(match.Groups[1].Value, out var id))
+                        continue;
 
                     if (e.Message.MentionedUsers?.Count() > foundUsers)
                     {
@@ -360,6 +361,15 @@ namespace vschatbot.src
                 return Task.FromResult(true);
             }
 
+            var customEmojiMatches = new Regex(@"\<(\:.+\:)\d+\>").Matches(content);
+            foreach (Match match in customEmojiMatches)
+            {
+                if (!match.Success)
+                    continue;
+
+                content = content.Replace(match.Groups[0].Value, match.Groups[1].Value);
+            }
+
             api.SendMessageToGroup(GlobalConstants.GeneralChatGroup, $"Discord|<strong>{e.Author.Username}</strong>: {content.Replace(">", "&gt;").Replace("<", "&lt;")}", EnumChatType.OthersMessage);
 
             return Task.FromResult(true);
@@ -378,10 +388,11 @@ namespace vschatbot.src
         {
             if (channelId == GlobalConstants.GeneralChatGroup)
             {
-                if (string.IsNullOrEmpty(message))
+                var foundText = new Regex(@".*?> (.+)$").Match(message);
+                if (!foundText.Success)
                     return;
 
-                sendDiscordMessage($"{message.Replace("<strong>", "**").Replace("</strong>", "**")}");
+                sendDiscordMessage($"**{byPlayer.PlayerName}**: {foundText.Groups[1].Value}");
             }
         }
     }

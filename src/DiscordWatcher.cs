@@ -76,12 +76,16 @@ namespace vschatbot.src
 
         private void Event_PlayerDisconnect(IServerPlayer byPlayer)
         {
-            sendDiscordMessage($"{byPlayer.PlayerName} has disconnected from the server! ({api.Server.Players.Count(x => x.ConnectionState == EnumClientState.Playing)}/{api.Server.Config.MaxClients})");
+            sendDiscordMessage($"{byPlayer.PlayerName} has disconnected from the server! " +
+                $"({api.Server.Players.Count(x => x.PlayerUID != byPlayer.PlayerUID && x.ConnectionState == EnumClientState.Playing)}" +
+                $"/{api.Server.Config.MaxClients})");
         }
 
         private void Event_PlayerJoin(IServerPlayer byPlayer)
         {
-            sendDiscordMessage($"{byPlayer.PlayerName} has connected to the server! ({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}/{api.Server.Config.MaxClients})");
+            sendDiscordMessage($"{byPlayer.PlayerName} has connected to the server! " +
+                $"({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
+                $"/{api.Server.Config.MaxClients})");
         }
 
         private void sendDiscordMessage(string message = "", DiscordEmbed embed = null)
@@ -129,6 +133,7 @@ namespace vschatbot.src
         private Task Client_ClientErrored(ClientErrorEventArgs e)
         {
             api.Server.LogError("vschatbot: Disconnected from Discord...", e.Exception);
+            api.Server.LogError("vschatbot: " + e.Exception.ToString());
 
             return Task.FromResult(true);
         }
@@ -204,7 +209,7 @@ namespace vschatbot.src
                 return Task.FromResult(true);
             }
 
-            api.SendMessageToGroup(GlobalConstants.AllChatGroups, $"Discord|<strong>{e.Author.Username}</strong>: {content}", EnumChatType.Notification);
+            api.SendMessageToGroup(GlobalConstants.AllChatGroups, $"Discord|<strong>{e.Author.Username}</strong>: {content.Replace(">", "&gt;").Replace("<", "&lt;")}", EnumChatType.Notification);
 
             return Task.FromResult(true);
         }

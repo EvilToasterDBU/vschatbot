@@ -381,7 +381,7 @@ namespace vschatbot.src
                 if (string.IsNullOrEmpty(message))
                     return;
 
-                sendDiscordMessage($"{message.Replace("<strong", "**").Replace("</strong>", "**")}");
+                sendDiscordMessage($"{message.Replace("<strong>", "**").Replace("</strong>", "**")}");
             }
         }
     }

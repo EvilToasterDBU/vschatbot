@@ -74,6 +74,18 @@ namespace vschatbot.src
             this.api.Event.PlayerChat += Event_PlayerChat;
             this.api.Event.PlayerJoin += Event_PlayerJoin;
             this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
+            this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
+            this.api.Event.ServerRunPhase(EnumServerRunPhase.Shutdown, Event_ServerShutdown);
+        }
+
+        private void Event_ServerShutdown()
+        {
+            sendDiscordMessage($"Server is shutting down. Goodbye!");
+        }
+
+        private void Event_ServerStartup()
+        {
+            sendDiscordMessage($"Server is now up and running. Come on in!");
         }
 
         private void Event_PlayerDisconnect(IServerPlayer byPlayer)

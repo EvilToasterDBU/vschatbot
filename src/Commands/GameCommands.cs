@@ -28,8 +28,8 @@ namespace vschatbot.src.Commands
             await context.RespondAsync(message);
         }
 
-        [Command("playerlist")]
-        [Aliases("onlineplayers", "players")]
+        [Command("players")]
+        [Aliases("onlineplayers", "playerlist")]
         [Description("Shows the currently online players and their play time")]
         public async Task OnlinePlayersAsync(CommandContext context)
         {

@@ -14,6 +14,7 @@ using DSharpPlus.Entities;
 using System.Text.RegularExpressions;
 using Vintagestory.GameContent;
 using vschatbot.src.Utils;
+using vschatbot.src.Commands;
 
 namespace vschatbot.src
 {
@@ -33,6 +34,8 @@ namespace vschatbot.src
 
         private dynamic lastData;
         private object temporalSystem;
+
+        public static Dictionary<string, DateTime> connectTimeDict = new Dictionary<string, DateTime>();
 
         public override bool ShouldLoad(EnumAppSide forSide)
         {
@@ -65,7 +68,6 @@ namespace vschatbot.src
             }
 
             this.api = api;
-
             Task.Run(async () => await this.MainAsync());
 
             this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
@@ -76,6 +78,8 @@ namespace vschatbot.src
 
         private void Event_PlayerDisconnect(IServerPlayer byPlayer)
         {
+            DiscordWatcher.connectTimeDict.Remove(byPlayer.PlayerUID);
+
             sendDiscordMessage($"{byPlayer.PlayerName} has disconnected from the server! " +
                 $"({api.Server.Players.Count(x => x.PlayerUID != byPlayer.PlayerUID && x.ConnectionState == EnumClientState.Playing)}" +
                 $"/{api.Server.Config.MaxClients})");
@@ -83,6 +87,8 @@ namespace vschatbot.src
 
         private void Event_PlayerJoin(IServerPlayer byPlayer)
         {
+            DiscordWatcher.connectTimeDict.Add(byPlayer.PlayerUID, DateTime.Now);
+
             sendDiscordMessage($"{byPlayer.PlayerName} has connected to the server! " +
                 $"({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
                 $"/{api.Server.Config.MaxClients})");
@@ -115,7 +121,8 @@ namespace vschatbot.src
             };
 
             this.commands = this.client.UseCommandsNext(commandConfiguration);
-            this.commands.RegisterCommands(Assembly.GetExecutingAssembly());
+            this.commands.RegisterCommands<GameCommands>();
+            this.commands.RegisterCommands<DebugCommands>();
 
             try
             {
@@ -177,7 +184,7 @@ namespace vschatbot.src
 
         private Task Client_MessageCreated(MessageCreateEventArgs e)
         {
-            if (e.Author.IsBot || e.Channel?.Id != this.discordChannel.Id)
+            if (e.Author.IsBot || e.Channel?.Id != this.discordChannel.Id || (e.Message.Content.StartsWith("!") && e.Message.Content.Length > 1 ) )
                 return Task.FromResult(true);
 
             var content = e.Message.Content;

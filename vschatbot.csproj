@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\Commands\DebugCommands.cs" />
+    <Compile Include="src\Commands\GameCommands.cs" />
     <Compile Include="src\DiscordWatcher.cs" />
     <Compile Include="src\ModConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

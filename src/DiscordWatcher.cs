@@ -32,8 +32,8 @@ namespace vschatbot.src
         private CommandsNextModule commands;
         private DiscordChannel discordChannel;
 
-        private dynamic lastData;
-        private object temporalSystem;
+        private TemporalStormRunTimeData lastData;
+        private SystemTemporalStability temporalSystem;
 
         private const string CONFIGNAME = "vschatbot.json";
 
@@ -154,7 +154,7 @@ namespace vschatbot.src
                         deathMessage += "when they killed themselves.";
                         break;
                     case EnumDamageSource.Internal:
-                        deathMessage += "when they ran afoul of the game mechanics.";
+                        deathMessage += "when they took damage from the inside...";
                         break;
                     case EnumDamageSource.Entity:
                         switch (damageSource.SourceEntity.Code.Path)
@@ -301,8 +301,7 @@ namespace vschatbot.src
 
         private void onTempStormTick(float t1)
         {
-            var dataField = typeof(SystemTemporalStability).GetField("data", BindingFlags.NonPublic | BindingFlags.Instance);
-            dynamic data = dataField.GetValue(temporalSystem).ToDynamic();
+            var data = this.temporalSystem.StormData;
 
             if (lastData?.stormDayNotify == 1 && data.stormDayNotify == 0)
             {
@@ -313,7 +312,7 @@ namespace vschatbot.src
                 sendDiscordMessage(embed: embed);
             }
 
-            double activeDaysLeft = data.stormActiveTotalDays - api.World.Calendar.TotalDays;
+            //double activeDaysLeft = data.stormActiveTotalDays - api.World.Calendar.TotalDays;
             if (lastData?.stormDayNotify == 0 && data.stormDayNotify == -1)
             {
                 var embed = new DiscordEmbedBuilder()

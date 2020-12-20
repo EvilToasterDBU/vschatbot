@@ -331,7 +331,7 @@ namespace vschatbot.src
                 return Task.FromResult(true);
 
             var content = e.Message.Content;
-            MatchCollection matches = new Regex(@"\<\@\!(\d+)\>").Matches(content);
+            MatchCollection matches = new Regex(@"\<\@\!?(\d+)\>").Matches(content);
             try
             {
                 var foundUsers = 0;

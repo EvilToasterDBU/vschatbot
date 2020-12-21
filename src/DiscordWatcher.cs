@@ -73,7 +73,8 @@ namespace vschatbot.src
             Task.Run(async () => await this.MainAsync());
 
             this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
-            this.api.Event.PlayerChat += Event_PlayerChat;
+            if( this.config.RelayDiscordToGame )
+                this.api.Event.PlayerChat += Event_PlayerChat;
             this.api.Event.PlayerJoin += Event_PlayerJoin;
             this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
             if (this.config.SendServerMessages)
@@ -255,7 +256,8 @@ namespace vschatbot.src
             });
 
             this.client.Ready += Client_Ready;
-            this.client.MessageCreated += Client_MessageCreated;
+            if( this.config.RelayGameToDiscord )
+                this.client.MessageCreated += Client_MessageCreated;
             this.client.ClientErrored += Client_ClientErrored;
 
             var commandConfiguration = new CommandsNextConfiguration

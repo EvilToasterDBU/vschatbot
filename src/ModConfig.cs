@@ -15,6 +15,8 @@ namespace vschatbot.src
         public bool SendDeathMessages { get; set; } = true;
         public bool SendServerMessages { get; set; } = true;
         public bool SendStormNotification { get; set; } = true;
+        public bool RelayDiscordToGame { get; set; } = true;
+        public bool RelayGameToDiscord { get; set; } = true;
 
         public string TEXT_StormBegin { get; set; } = "Harketh the storm doth come, Wary be thine self, as for thy own end be near.";
         public string TEXT_StormEnd { get; set; } = "The temporal storm seems to be waning...";

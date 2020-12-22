@@ -324,7 +324,7 @@ namespace vschatbot.src
             if (lastData?.stormDayNotify > 1 && data.stormDayNotify == 1 && this.config.SendStormEarlyNotification)
             {
                 var embed = new DiscordEmbedBuilder()
-                .WithTitle(this.config.TEXT_StormEarlyWarning)
+                .WithTitle(this.config.TEXT_StormEarlyWarning.Replace("{strength}", Enum.GetName(typeof(EnumTempStormStrength), data.nextStormStrength).ToLower()))
                 .WithColor(DiscordColor.Yellow);
 
                 sendDiscordMessage(embed: embed);
@@ -333,7 +333,7 @@ namespace vschatbot.src
             if (lastData?.stormDayNotify == 1 && data.stormDayNotify == 0)
             {
                 var embed = new DiscordEmbedBuilder()
-                .WithTitle(this.config.TEXT_StormBegin)
+                .WithTitle(this.config.TEXT_StormBegin.Replace("{strength}", Enum.GetName(typeof(EnumTempStormStrength), data.nextStormStrength).ToLower()))
                 .WithColor(DiscordColor.Red);
 
                 sendDiscordMessage(embed: embed);
@@ -343,7 +343,7 @@ namespace vschatbot.src
             if (lastData?.stormDayNotify == 0 && data.stormDayNotify == -1)
             {
                 var embed = new DiscordEmbedBuilder()
-                .WithTitle(this.config.TEXT_StormEnd)
+                .WithTitle(this.config.TEXT_StormEnd.Replace("{strength}", Enum.GetName(typeof(EnumTempStormStrength), data.nextStormStrength).ToLower()))
                 .WithColor(DiscordColor.Green);
 
                 sendDiscordMessage(embed: embed);

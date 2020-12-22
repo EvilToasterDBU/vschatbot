@@ -15,11 +15,16 @@ using System.Text.RegularExpressions;
 using Vintagestory.GameContent;
 using vschatbot.src.Utils;
 using vschatbot.src.Commands;
+using Vintagestory.API.Util;
+using Newtonsoft.Json;
 
 namespace vschatbot.src
 {
     public class DiscordWatcher : ModSystem
     {
+        public const string PLAYERDATA_LASTSEENKEY = "VSCHATBOT_LASTSEEN";
+        public const string PLAYERDATA_TOTALPLAYTIMEKEY = "VSCHATBOT_TOTALPLAYTIME";
+
         public static ICoreServerAPI Api;
 
         private ICoreServerAPI api
@@ -73,7 +78,7 @@ namespace vschatbot.src
             Task.Run(async () => await this.MainAsync());
 
             this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
-            if( this.config.RelayDiscordToGame )
+            if (this.config.RelayDiscordToGame)
                 this.api.Event.PlayerChat += Event_PlayerChat;
             this.api.Event.PlayerJoin += Event_PlayerJoin;
             this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
@@ -224,6 +229,17 @@ namespace vschatbot.src
 
         private void Event_PlayerDisconnect(IServerPlayer byPlayer)
         {
+            var data = this.api.PlayerData.GetPlayerDataByUid(byPlayer.PlayerUID);
+            if (data != null)
+            {
+                data.CustomPlayerData[PLAYERDATA_LASTSEENKEY] = JsonConvert.SerializeObject(DateTime.UtcNow);
+
+                var timePlayed = DateTime.UtcNow - DiscordWatcher.connectTimeDict[byPlayer.PlayerUID];
+                if (data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALPLAYTIMEKEY, out var totalPlaytimeJson))
+                    data.CustomPlayerData[PLAYERDATA_TOTALPLAYTIMEKEY] = JsonConvert.SerializeObject(timePlayed + JsonConvert.DeserializeObject<TimeSpan>(totalPlaytimeJson));
+                data.CustomPlayerData[PLAYERDATA_TOTALPLAYTIMEKEY] = JsonConvert.SerializeObject(timePlayed);
+            }
+
             DiscordWatcher.connectTimeDict.Remove(byPlayer.PlayerUID);
 
             sendDiscordMessage($"{byPlayer.PlayerName} has disconnected from the server! " +
@@ -233,7 +249,7 @@ namespace vschatbot.src
 
         private void Event_PlayerJoin(IServerPlayer byPlayer)
         {
-            DiscordWatcher.connectTimeDict.Add(byPlayer.PlayerUID, DateTime.Now);
+            DiscordWatcher.connectTimeDict.Add(byPlayer.PlayerUID, DateTime.UtcNow);
 
             sendDiscordMessage($"{byPlayer.PlayerName} has connected to the server! " +
                 $"({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
@@ -256,7 +272,7 @@ namespace vschatbot.src
             });
 
             this.client.Ready += Client_Ready;
-            if( this.config.RelayGameToDiscord )
+            if (this.config.RelayGameToDiscord)
                 this.client.MessageCreated += Client_MessageCreated;
             this.client.ClientErrored += Client_ClientErrored;
 
@@ -305,6 +321,15 @@ namespace vschatbot.src
         {
             var data = this.temporalSystem.StormData;
 
+            if (lastData?.stormDayNotify > 1 && data.stormDayNotify == 1 && this.config.SendStormEarlyNotification)
+            {
+                var embed = new DiscordEmbedBuilder()
+                .WithTitle(this.config.TEXT_StormEarlyWarning)
+                .WithColor(DiscordColor.Yellow);
+
+                sendDiscordMessage(embed: embed);
+            }
+
             if (lastData?.stormDayNotify == 1 && data.stormDayNotify == 0)
             {
                 var embed = new DiscordEmbedBuilder()
@@ -324,7 +349,7 @@ namespace vschatbot.src
                 sendDiscordMessage(embed: embed);
             }
 
-            lastData = data;
+            lastData = JsonConvert.DeserializeObject<TemporalStormRunTimeData>(JsonConvert.SerializeObject(data));
         }
 
         private Task Client_MessageCreated(MessageCreateEventArgs e)

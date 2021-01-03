@@ -24,6 +24,7 @@ namespace vschatbot.src
     {
         public const string PLAYERDATA_LASTSEENKEY = "VSCHATBOT_LASTSEEN";
         public const string PLAYERDATA_TOTALPLAYTIMEKEY = "VSCHATBOT_TOTALPLAYTIME";
+        public const string PLAYERDATA_TOTALDEATHCOUNT = "VSCHATBOT_TOTALDEATHCOUNT";
 
         public static ICoreServerAPI Api;
 
@@ -75,7 +76,7 @@ namespace vschatbot.src
             }
 
             this.api = api;
-            Task.Run(async () => await this.MainAsync());
+            Task.Run(async () => await this.MainAsync(api));
 
             this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
             if (this.config.RelayDiscordToGame)
@@ -214,6 +215,20 @@ namespace vschatbot.src
                 }
             }
 
+            var deathCount = 1;
+            IServerPlayerData data = null;
+            if ((data = this.api.PlayerData.GetPlayerDataByUid(byPlayer.PlayerUID)) != null)
+            {
+                if(data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALDEATHCOUNT, out var totalDeathCountJson))
+                {
+                    deathCount += JsonConvert.DeserializeObject<int>(totalDeathCountJson);
+                }
+
+                data.CustomPlayerData[PLAYERDATA_TOTALDEATHCOUNT] = JsonConvert.SerializeObject(deathCount);
+            }
+
+            deathMessage += $"Their total death count is now {deathCount} {(deathCount == 1 ? "death" : "deaths")}!";
+
             sendDiscordMessage(deathMessage);
         }
 
@@ -234,10 +249,13 @@ namespace vschatbot.src
             {
                 data.CustomPlayerData[PLAYERDATA_LASTSEENKEY] = JsonConvert.SerializeObject(DateTime.UtcNow);
 
-                var timePlayed = DateTime.UtcNow - DiscordWatcher.connectTimeDict[byPlayer.PlayerUID];
-                if (data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALPLAYTIMEKEY, out var totalPlaytimeJson))
-                    data.CustomPlayerData[PLAYERDATA_TOTALPLAYTIMEKEY] = JsonConvert.SerializeObject(timePlayed + JsonConvert.DeserializeObject<TimeSpan>(totalPlaytimeJson));
-                data.CustomPlayerData[PLAYERDATA_TOTALPLAYTIMEKEY] = JsonConvert.SerializeObject(timePlayed);
+                if( DiscordWatcher.connectTimeDict.TryGetValue(byPlayer.PlayerUID, out var connectedTime) )
+                {
+                    var timePlayed = DateTime.UtcNow - connectedTime;
+                    if (data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALPLAYTIMEKEY, out var totalPlaytimeJson))
+                        data.CustomPlayerData[PLAYERDATA_TOTALPLAYTIMEKEY] = JsonConvert.SerializeObject(timePlayed + JsonConvert.DeserializeObject<TimeSpan>(totalPlaytimeJson));
+                    data.CustomPlayerData[PLAYERDATA_TOTALPLAYTIMEKEY] = JsonConvert.SerializeObject(timePlayed);
+                }
             }
 
             DiscordWatcher.connectTimeDict.Remove(byPlayer.PlayerUID);
@@ -261,7 +279,7 @@ namespace vschatbot.src
             this.client.SendMessageAsync(this.discordChannel, message, embed: embed);
         }
 
-        private async Task MainAsync()
+        private async Task MainAsync(ICoreServerAPI api)
         {
             this.client = new DiscordClient(new DiscordConfiguration()
             {
@@ -339,7 +357,6 @@ namespace vschatbot.src
                 sendDiscordMessage(embed: embed);
             }
 
-            //double activeDaysLeft = data.stormActiveTotalDays - api.World.Calendar.TotalDays;
             if (lastData?.stormDayNotify == 0 && data.stormDayNotify == -1)
             {
                 var embed = new DiscordEmbedBuilder()

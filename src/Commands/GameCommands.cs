@@ -32,35 +32,28 @@ namespace vschatbot.src.Commands
             await context.RespondAsync("", embed: embed);
         }
 
+        private string StringifyTime(int time)
+        {
+            return $"{(time > 120 ? (time / 60) + " hours and " + (time % 60) : time.ToString())} minute{(time % 60 == 1 ? "" : "s")}";
+        }
+
         [Command("players")]
         [Aliases("onlineplayers", "playerlist", "online", "list")]
         [Description("Shows the currently online players and their play time")]
         public async Task OnlinePlayersAsync(CommandContext context)
         {
             var playerData = this.api.World.AllOnlinePlayers.Select(player => {
-                var newPlayerData = new OnlinePlayerData() { PlayerName = player.PlayerName };
+                var newPlayerData = new OnlinePlayerData() { PlayerName = player.PlayerName, SessionLengthInMinutes = -1 };
 
-                newPlayerData.SessionLengthInMinutes = (int)(DateTime.UtcNow - DiscordWatcher.connectTimeDict[player.PlayerUID]).TotalMinutes;
-                newPlayerData.TotalPlaytimeInMinutes = newPlayerData.SessionLengthInMinutes;
-
-                string playtimeJson = "";
-                if (this.api.PlayerData.GetPlayerDataByUid(player.PlayerUID)?.CustomPlayerData?.TryGetValue(DiscordWatcher.PLAYERDATA_TOTALPLAYTIMEKEY, out playtimeJson) ?? false)
-                {
-                    newPlayerData.TotalPlaytimeInMinutes += (int) JsonConvert.DeserializeObject<TimeSpan>(playtimeJson).TotalMinutes;
-                }
+                if(DiscordWatcher.connectTimeDict.TryGetValue(player.PlayerUID, out var sessionConnect))
+                    newPlayerData.SessionLengthInMinutes = (int)(DateTime.UtcNow - sessionConnect ).TotalMinutes;
 
                 return newPlayerData;
             });
 
-            string StringifyTime(int time)
-            {
-                return $"{(time > 120 ? (time / 60) + " hours and " + (time % 60) : time.ToString())} minute{(time % 60 == 1 ? "" : "s")}";
-            }
-
             var embed = new DiscordEmbedBuilder().WithTitle($"Currently online players ({this.api.World.AllOnlinePlayers.Count()}/{this.api.Server.Config.MaxClients}):")
                 .WithDescription(playerData.Select(x => $"Name: '{x.PlayerName}'" +
-                $" - Session playtime: {StringifyTime(x.SessionLengthInMinutes)}" +
-                $" - Total playtime: {StringifyTime(x.TotalPlaytimeInMinutes)}")
+                $" - Session playtime: {StringifyTime(x.SessionLengthInMinutes)}") 
                 .Aggregate("", (acc, str) => acc += (str + "\n")))
                 .Build();
 
@@ -77,7 +70,7 @@ namespace vschatbot.src.Commands
             var isOnline = this.api.World.AllOnlinePlayers.FirstOrDefault(x => x.PlayerName.ToLower() == name.ToLower()) != null;
             if (isOnline)
             {
-                embed.WithDescription($"Well... He's online right now!");
+                embed.WithDescription($"Well... They're online right now!");
                 await context.RespondAsync("", embed: embed);
                 return;
             }
@@ -92,7 +85,7 @@ namespace vschatbot.src.Commands
 
             if (!playerData.CustomPlayerData.TryGetValue(DiscordWatcher.PLAYERDATA_LASTSEENKEY, out var lastSeenJson))
             {
-                embed.WithDescription($"Player data for '{name}' found, but he hasn't been seen since this bot was installed...").Build();
+                embed.WithDescription($"Player data for '{name}' found, but they haven't been seen since this bot was installed...").Build();
                 await context.RespondAsync("", embed: embed);
                 return;
             }
@@ -100,7 +93,50 @@ namespace vschatbot.src.Commands
             var data = JsonConvert.DeserializeObject<DateTime>(lastSeenJson);
             embed.WithDescription($"The last time '{name}' was seen, was {data:f} in UTC timezone");
             await context.RespondAsync("", embed: embed);
-            return;
+        }
+
+        [Command("stats")]
+        [Aliases("playerinfo", "playerstats")]
+        [Description("Shows more in-depth stats about a particular playername")]
+        public async Task PlayerInfoAsync(CommandContext context, [Description("The player's name to search for")] string name)
+        {
+            var embed = new DiscordEmbedBuilder().WithTitle($"Player stats for '{name}'");
+            var descriptionStringBuilder = new StringBuilder();
+
+            var playerData = api.PlayerData.GetPlayerDataByLastKnownName(name);
+            if (playerData == null)
+            {
+                embed.WithDescription($"No player data found for '{name}'").Build();
+                await context.RespondAsync("", embed: embed);
+                return;
+            }
+            
+            //Total playtime
+            var totalPlaytimeInMinutes = 0;
+            if( DiscordWatcher.connectTimeDict.TryGetValue(playerData.PlayerUID, out var connectTime) )
+            {
+                totalPlaytimeInMinutes = (int)(DateTime.UtcNow - connectTime).TotalMinutes;
+            }
+            
+            if (playerData.CustomPlayerData.TryGetValue(DiscordWatcher.PLAYERDATA_TOTALPLAYTIMEKEY, out var playtimeJson) )
+            {
+                totalPlaytimeInMinutes += (int)JsonConvert.DeserializeObject<TimeSpan>(playtimeJson).TotalMinutes;
+            }
+
+            descriptionStringBuilder.AppendLine($"Total playtime: {StringifyTime(totalPlaytimeInMinutes)}");
+
+            //Death count
+            var deathCount = 0;
+            if (playerData.CustomPlayerData.TryGetValue(DiscordWatcher.PLAYERDATA_TOTALDEATHCOUNT, out var totalDeathCountJson))
+            {
+                deathCount += JsonConvert.DeserializeObject<int>(totalDeathCountJson);
+            }
+
+            descriptionStringBuilder.AppendLine($"Total deaths: {deathCount}");
+
+            embed.WithDescription(descriptionStringBuilder.ToString())
+                 .Build();
+            await context.RespondAsync("", embed: embed);
         }
     }
 }

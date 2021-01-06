@@ -227,7 +227,8 @@ namespace vschatbot.src
                 data.CustomPlayerData[PLAYERDATA_TOTALDEATHCOUNT] = JsonConvert.SerializeObject(deathCount);
             }
 
-            deathMessage += $"Their total death count is now {deathCount} {(deathCount == 1 ? "death" : "deaths")}!";
+            if (this.config.AddDeathCountToDeathMessages)
+                deathMessage += $" {this.config.TEXT_DeathMessage.Replace("{deathCount}", deathCount + (deathCount == 1 ? " death" : " deaths"))}";
 
             sendDiscordMessage(deathMessage);
         }
@@ -262,7 +263,7 @@ namespace vschatbot.src
 
             sendDiscordMessage($"{byPlayer.PlayerName} has disconnected from the server! " +
                 $"({api.Server.Players.Count(x => x.PlayerUID != byPlayer.PlayerUID && x.ConnectionState == EnumClientState.Playing)}" +
-                $"/{api.Server.Config.MaxClients})");
+                $"/{api.Server.Config.MaxClients})"); 
         }
 
         private void Event_PlayerJoin(IServerPlayer byPlayer)

@@ -13,6 +13,7 @@ namespace vschatbot.src
         public ulong ChannelId { get; set; } = 22222222222;
 
         public bool SendDeathMessages { get; set; } = true;
+        public bool AddDeathCountToDeathMessages { get; set; } = true;
         public bool SendServerMessages { get; set; } = true;
         public bool SendStormNotification { get; set; } = true;
         public bool SendStormEarlyNotification { get; set; } = true;
@@ -24,5 +25,6 @@ namespace vschatbot.src
         public string TEXT_StormEnd { get; set; } = "The temporal storm seems to be waning...";
         public string TEXT_ServerStart { get; set; } = "Server is now up and running. Come on in!";
         public string TEXT_ServerStop { get; set; } = "Server is shutting down. Goodbye!";
+        public string TEXT_DeathMessage { get; set; } = "Their total death count is now {deathCount}!";
     }
 }

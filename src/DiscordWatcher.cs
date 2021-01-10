@@ -226,7 +226,6 @@ namespace vschatbot.src
 
                 data.CustomPlayerData[PLAYERDATA_TOTALDEATHCOUNT] = JsonConvert.SerializeObject(deathCount);
             }
-
             if (this.config.AddDeathCountToDeathMessages)
                 deathMessage += $" {this.config.TEXT_DeathMessage.Replace("{deathCount}", deathCount + (deathCount == 1 ? " death" : " deaths"))}";
 
@@ -277,6 +276,9 @@ namespace vschatbot.src
 
         private void sendDiscordMessage(string message = "", DiscordEmbed embed = null)
         {
+            if (this.client == null || this.discordChannel == null)
+                return;
+
             this.client.SendMessageAsync(this.discordChannel, message, embed: embed);
         }
 

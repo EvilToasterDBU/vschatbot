@@ -82,6 +82,7 @@ namespace vschatbot.src
                 if (!loggedIn)
                 {
                     api.Server.LogError($"vschatbot: Failed to connect to Discord with config at 'ModConfig/{CONFIGNAME}'! Is it correct?");
+                    return;
                 }
 
                 this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;

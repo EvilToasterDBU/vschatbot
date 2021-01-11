@@ -64,32 +64,41 @@ namespace vschatbot.src
 
             if (this.config == null)
             {
-                api.Server.LogNotification($"vschatbot: non-existant modconfig at 'ModConfig/{CONFIGNAME}', creating default and disabling mod...");
+                api.Server.LogNotification($"vschatbot: Non-existant modconfig at 'ModConfig/{CONFIGNAME}', creating default and disabling mod...");
                 api.StoreModConfig(new ModConfig(), CONFIGNAME);
 
                 return;
             }
-            else if (this.config.Token == "insert bot token here" || this.config.ChannelId == default || this.config.ServerId == default)
+            else if (this.config.Token == "insert token here" || (this.config.ChannelId == 22222222222 || this.config.ChannelId == default) || (this.config.ServerId == 11111111111 || this.config.ServerId == default))
             {
-                api.Server.LogError($"vschatbot: invalid modconfig at 'ModConfig/{CONFIGNAME}'!");
+                api.Server.LogError($"vschatbot: Invalid modconfig at 'ModConfig/{CONFIGNAME}'!");
                 return;
             }
 
             this.api = api;
-            Task.Run(async () => await this.MainAsync(api));
-
-            this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
-            if (this.config.RelayDiscordToGame)
-                this.api.Event.PlayerChat += Event_PlayerChat;
-            this.api.Event.PlayerJoin += Event_PlayerJoin;
-            this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
-            if (this.config.SendServerMessages)
+            Task.Run(async () => 
             {
-                this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
-                this.api.Event.ServerRunPhase(EnumServerRunPhase.Shutdown, Event_ServerShutdown);
-            }
-            if (this.config.SendDeathMessages)
-                this.api.Event.PlayerDeath += Event_PlayerDeath;
+                var loggedIn = await this.LoginAsync();
+                if (!loggedIn)
+                {
+                    api.Server.LogError($"vschatbot: Failed to connect to Discord with config at 'ModConfig/{CONFIGNAME}'! Is it correct?");
+                }
+
+                this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
+                if (this.config.RelayDiscordToGame)
+                    this.api.Event.PlayerChat += Event_PlayerChat;
+                this.api.Event.PlayerJoin += Event_PlayerJoin;
+                this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
+                if (this.config.SendServerMessages)
+                {
+                    this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
+                    this.api.Event.ServerRunPhase(EnumServerRunPhase.Shutdown, Event_ServerShutdown);
+                }
+                if (this.config.SendDeathMessages)
+                    this.api.Event.PlayerDeath += Event_PlayerDeath;
+
+                await this.MainAsync(api);
+            } );
         }
 
         //Shout-out to Milo for texts
@@ -219,7 +228,7 @@ namespace vschatbot.src
             IServerPlayerData data = null;
             if ((data = this.api.PlayerData.GetPlayerDataByUid(byPlayer.PlayerUID)) != null)
             {
-                if(data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALDEATHCOUNT, out var totalDeathCountJson))
+                if (data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALDEATHCOUNT, out var totalDeathCountJson))
                 {
                     deathCount += JsonConvert.DeserializeObject<int>(totalDeathCountJson);
                 }
@@ -249,7 +258,7 @@ namespace vschatbot.src
             {
                 data.CustomPlayerData[PLAYERDATA_LASTSEENKEY] = JsonConvert.SerializeObject(DateTime.UtcNow);
 
-                if( DiscordWatcher.connectTimeDict.TryGetValue(byPlayer.PlayerUID, out var connectedTime) )
+                if (DiscordWatcher.connectTimeDict.TryGetValue(byPlayer.PlayerUID, out var connectedTime))
                 {
                     var timePlayed = DateTime.UtcNow - connectedTime;
                     if (data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALPLAYTIMEKEY, out var totalPlaytimeJson))
@@ -262,7 +271,7 @@ namespace vschatbot.src
 
             sendDiscordMessage($"{byPlayer.PlayerName} has disconnected from the server! " +
                 $"({api.Server.Players.Count(x => x.PlayerUID != byPlayer.PlayerUID && x.ConnectionState == EnumClientState.Playing)}" +
-                $"/{api.Server.Config.MaxClients})"); 
+                $"/{api.Server.Config.MaxClients})");
         }
 
         private void Event_PlayerJoin(IServerPlayer byPlayer)
@@ -277,25 +286,23 @@ namespace vschatbot.src
         private void sendDiscordMessage(string message = "", DiscordEmbed embed = null)
         {
             if (this.client == null || this.discordChannel == null)
+            {
+                this.api.Server.LogError("vschatbot: Tried to send message but was not connected to Discord... Did something go wrong, or were we never connected to Discord in the first place? (check your config)");
                 return;
+            }
 
             this.client.SendMessageAsync(this.discordChannel, message, embed: embed);
         }
 
-        private async Task MainAsync(ICoreServerAPI api)
+        private async Task<bool> LoginAsync()
         {
-            this.client = new DiscordClient(new DiscordConfiguration()
+            var client = new DiscordClient(new DiscordConfiguration()
             {
                 Token = this.config.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 LogLevel = LogLevel.Debug
             });
-
-            this.client.Ready += Client_Ready;
-            if (this.config.RelayGameToDiscord)
-                this.client.MessageCreated += Client_MessageCreated;
-            this.client.ClientErrored += Client_ClientErrored;
 
             var commandConfiguration = new CommandsNextConfiguration
             {
@@ -315,8 +322,19 @@ namespace vschatbot.src
             catch (Exception)
             {
                 this.api.Server.LogError("vschatbot: Failed to login using token...");
-                return;
+                return false;
             }
+
+            this.client = client;
+            return true;
+        }
+
+        private async Task MainAsync(ICoreServerAPI api)
+        {
+            this.client.Ready += Client_Ready;
+            if (this.config.RelayGameToDiscord)
+                this.client.MessageCreated += Client_MessageCreated;
+            this.client.ClientErrored += Client_ClientErrored;
 
             await Task.Delay(-1);
         }
@@ -423,7 +441,7 @@ namespace vschatbot.src
 
         private Task Client_Ready(ReadyEventArgs e)
         {
-            this.api.Server.LogNotification("vschatbot: connected to discord and ready!");
+            this.api.Server.LogNotification("vschatbot: Connected to discord and ready!");
 
             this.discordChannel = this.client.GetChannelAsync(this.config.ChannelId).ConfigureAwait(false).GetAwaiter().GetResult();
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -263,7 +263,7 @@ namespace vschatbot.src
                 {
                     var timePlayed = DateTime.UtcNow - connectedTime;
                     if (data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALPLAYTIMEKEY, out var totalPlaytimeJson))
-                        data.CustomPlayerData[PLAYERDATA_TOTALPLAYTIMEKEY] = JsonConvert.SerializeObject(timePlayed + JsonConvert.DeserializeObject<TimeSpan>(totalPlaytimeJson));
+                        timePlayed += JsonConvert.DeserializeObject<TimeSpan>(totalPlaytimeJson);
                     data.CustomPlayerData[PLAYERDATA_TOTALPLAYTIMEKEY] = JsonConvert.SerializeObject(timePlayed);
                 }
             }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -64,42 +64,32 @@ namespace vschatbot.src
 
             if (this.config == null)
             {
-                api.Server.LogNotification($"vschatbot: Non-existant modconfig at 'ModConfig/{CONFIGNAME}', creating default and disabling mod...");
+                api.Server.LogNotification($"vschatbot: non-existant modconfig at 'ModConfig/{CONFIGNAME}', creating default and disabling mod...");
                 api.StoreModConfig(new ModConfig(), CONFIGNAME);
 
                 return;
             }
-            else if (this.config.Token == "insert token here" || (this.config.ChannelId == 22222222222 || this.config.ChannelId == default) || (this.config.ServerId == 11111111111 || this.config.ServerId == default))
+            else if (this.config.Token == "insert bot token here" || this.config.ChannelId == default || this.config.ServerId == default)
             {
-                api.Server.LogError($"vschatbot: Invalid modconfig at 'ModConfig/{CONFIGNAME}'!");
+                api.Server.LogError($"vschatbot: invalid modconfig at 'ModConfig/{CONFIGNAME}'!");
                 return;
             }
 
             this.api = api;
-            Task.Run(async () => 
+            Task.Run(async () => await this.MainAsync(api));
+
+            this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
+            if (this.config.RelayDiscordToGame)
+                this.api.Event.PlayerChat += Event_PlayerChat;
+            this.api.Event.PlayerJoin += Event_PlayerJoin;
+            this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
+            if (this.config.SendServerMessages)
             {
-                var loggedIn = await this.LoginAsync();
-                if (!loggedIn)
-                {
-                    api.Server.LogError($"vschatbot: Failed to connect to Discord with config at 'ModConfig/{CONFIGNAME}'! Is it correct?");
-                    return;
-                }
-
-                this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
-                if (this.config.RelayDiscordToGame)
-                    this.api.Event.PlayerChat += Event_PlayerChat;
-                this.api.Event.PlayerJoin += Event_PlayerJoin;
-                this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
-                if (this.config.SendServerMessages)
-                {
-                    this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
-                    this.api.Event.ServerRunPhase(EnumServerRunPhase.Shutdown, Event_ServerShutdown);
-                }
-                if (this.config.SendDeathMessages)
-                    this.api.Event.PlayerDeath += Event_PlayerDeath;
-
-                await this.MainAsync(api);
-            } );
+                this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
+                this.api.Event.ServerRunPhase(EnumServerRunPhase.Shutdown, Event_ServerShutdown);
+            }
+            if (this.config.SendDeathMessages)
+                this.api.Event.PlayerDeath += Event_PlayerDeath;
         }
 
         //Shout-out to Milo for texts
@@ -107,41 +97,41 @@ namespace vschatbot.src
         {
             var deathMessage = (byPlayer?.PlayerName ?? "Unknown player") + " ";
             if (damageSource == null)
-                deathMessage += "was killed by the unknown.";
+                deathMessage += this.config.TEXT_DeathMessageUnknown;
             else
             {
                 switch (damageSource.Type)
                 {
                     case EnumDamageType.Gravity:
-                        deathMessage += "smashed into the ground";
+                        deathMessage += this.config.TEXT_DeathMessageGravity;
                         break;
                     case EnumDamageType.Fire:
-                        deathMessage += "burned to death";
+                        deathMessage += this.config.TEXT_DeathMessageFire;
                         break;
                     case EnumDamageType.Crushing:
                     case EnumDamageType.BluntAttack:
-                        deathMessage += "was crushed";
+                        deathMessage += this.config.TEXT_DeathMessageCrushing;
                         break;
                     case EnumDamageType.SlashingAttack:
-                        deathMessage += "was sliced open";
+                        deathMessage += this.config.TEXT_DeathMessageSlashingAttack;
                         break;
                     case EnumDamageType.PiercingAttack:
-                        deathMessage += "was pierced through";
+                        deathMessage += this.config.TEXT_DeathMessagePiercingAttack;
                         break;
                     case EnumDamageType.Suffocation:
-                        deathMessage += "suffocated to death";
+                        deathMessage += this.config.TEXT_DeathMessageSuffocation;
                         break;
                     case EnumDamageType.Heal:
-                        deathMessage += "was somehow *healed* to death";
+                        deathMessage += this.config.TEXT_DeathMessageHeal;
                         break;
                     case EnumDamageType.Poison:
-                        deathMessage += "was poisoned";
+                        deathMessage += this.config.TEXT_DeathMessagePoison;
                         break;
                     case EnumDamageType.Hunger:
-                        deathMessage += "starved to death";
+                        deathMessage += this.config.TEXT_DeathMessageHunger;
                         break;
                     default:
-                        deathMessage += "was killed";
+                        deathMessage += this.config.TEXT_DeathMessageDefault;
                         break;
                 }
 
@@ -150,77 +140,77 @@ namespace vschatbot.src
                 switch (damageSource.Source)
                 {
                     case EnumDamageSource.Block:
-                        deathMessage += "by a block.";
+                        deathMessage += this.config.TEXT_DeathMessageBlock;
                         break;
                     case EnumDamageSource.Player:
-                        deathMessage += "when they failed at PVP.";
+                        deathMessage += this.config.TEXT_DeathMessagePVP;
                         break;
                     case EnumDamageSource.Fall:
-                        deathMessage += "when they fell to their doom.";
+                        deathMessage += this.config.TEXT_DeathMessageFall;
                         break;
                     case EnumDamageSource.Drown:
-                        deathMessage += "when they tried to breath in water.";
+                        deathMessage += this.config.TEXT_DeathMessageDrown;
                         break;
                     case EnumDamageSource.Revive:
-                        deathMessage += "just as they respawned.";
+                        deathMessage += this.config.TEXT_DeathMessageRevive;
                         break;
                     case EnumDamageSource.Void:
-                        deathMessage += "when they fell screaming into the abyss.";
+                        deathMessage += this.config.TEXT_DeathMessageVoid;
                         break;
                     case EnumDamageSource.Suicide:
-                        deathMessage += "when they killed themselves.";
+                        deathMessage += this.config.TEXT_DeathMessageSuicide;
                         break;
                     case EnumDamageSource.Internal:
-                        deathMessage += "when they took damage from the inside...";
+                        deathMessage += this.config.TEXT_DeathMessageInternal;
                         break;
                     case EnumDamageSource.Entity:
                         switch (damageSource.SourceEntity.Code.Path)
                         {
                             case "wolf-male":
                             case "wolf-female":
-                                deathMessage += "and eaten by a wolf.";
+                                deathMessage += this.config.TEXT_DeathMessageWolf;
                                 break;
                             case "pig-wild-male":
-                                deathMessage += "by a boar.";
+                                deathMessage += this.config.TEXT_DeathMessagePigM;
                                 break;
                             case "pig-wild-female":
-                                deathMessage += "by a sow.";
+                                deathMessage += this.config.TEXT_DeathMessagePigF;
                                 break;
                             case "sheep-bighorn-female":
                             case "sheep-bighorn-male":
-                                deathMessage += "by a sheep.";
+                                deathMessage += this.config.TEXT_DeathMessageBighorn;
                                 break;
                             case "chicken-rooster":
-                                deathMessage += "by a... chicken.";
+                                deathMessage += this.config.TEXT_DeathMessageСhicken;
                                 break;
                             case "locust":
-                                deathMessage += "by a locust.";
+                                deathMessage += this.config.TEXT_DeathMessageLocust;
                                 break;
                             case "drifter":
-                                deathMessage += "by a drifter.";
+                                deathMessage += this.config.TEXT_DeathMessageDrifter;
                                 break;
                             case "beemob":
-                                deathMessage += "by a swarm of bees.";
+                                deathMessage += this.config.TEXT_DeathMessageBee;
                                 break;
                             default:
-                                deathMessage += "by a monster.";
+                                deathMessage += this.config.TEXT_DeathMessageMob;
                                 break;
                         }
                         break;
                     case EnumDamageSource.Explosion:
-                        deathMessage += "when they stood by a bomb.";
+                        deathMessage += this.config.TEXT_DeathMessageExplosion;
                         break;
                     case EnumDamageSource.Machine:
-                        deathMessage += "when they got their hands stuck in a machine.";
+                        deathMessage += this.config.TEXT_DeathMessageMachine;
                         break;
                     case EnumDamageSource.Unknown:
-                        deathMessage += "when they encountered the unknown.";
+                        deathMessage += this.config.TEXT_DeathMessageUnknownS;
                         break;
                     case EnumDamageSource.Weather:
-                        deathMessage += "when the weather itself suddenly struck.";
+                        deathMessage += this.config.TEXT_DeathMessageWeather;
                         break;
                     default:
-                        deathMessage += "by the unknown.";
+                        deathMessage += this.config.TEXT_DeathMessageUnknownU;
                         break;
                 }
             }
@@ -229,15 +219,15 @@ namespace vschatbot.src
             IServerPlayerData data = null;
             if ((data = this.api.PlayerData.GetPlayerDataByUid(byPlayer.PlayerUID)) != null)
             {
-                if (data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALDEATHCOUNT, out var totalDeathCountJson))
+                if(data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALDEATHCOUNT, out var totalDeathCountJson))
                 {
                     deathCount += JsonConvert.DeserializeObject<int>(totalDeathCountJson);
                 }
 
                 data.CustomPlayerData[PLAYERDATA_TOTALDEATHCOUNT] = JsonConvert.SerializeObject(deathCount);
             }
-            if (this.config.AddDeathCountToDeathMessages)
-                deathMessage += $" {this.config.TEXT_DeathMessage.Replace("{deathCount}", deathCount + (deathCount == 1 ? " death" : " deaths"))}";
+
+            deathMessage += this.config.TEXT_PlayerDeathCountMessage + $" {deathCount}!";
 
             sendDiscordMessage(deathMessage);
         }
@@ -259,7 +249,7 @@ namespace vschatbot.src
             {
                 data.CustomPlayerData[PLAYERDATA_LASTSEENKEY] = JsonConvert.SerializeObject(DateTime.UtcNow);
 
-                if (DiscordWatcher.connectTimeDict.TryGetValue(byPlayer.PlayerUID, out var connectedTime))
+                if( DiscordWatcher.connectTimeDict.TryGetValue(byPlayer.PlayerUID, out var connectedTime) )
                 {
                     var timePlayed = DateTime.UtcNow - connectedTime;
                     if (data.CustomPlayerData.TryGetValue(PLAYERDATA_TOTALPLAYTIMEKEY, out var totalPlaytimeJson))
@@ -270,40 +260,39 @@ namespace vschatbot.src
 
             DiscordWatcher.connectTimeDict.Remove(byPlayer.PlayerUID);
 
-            sendDiscordMessage($"{byPlayer.PlayerName} has disconnected from the server! " +
-                $"({api.Server.Players.Count(x => x.PlayerUID != byPlayer.PlayerUID && x.ConnectionState == EnumClientState.Playing)}" +
-                $"/{api.Server.Config.MaxClients})");
+            sendDiscordMessage($"*{byPlayer.PlayerName} " + this.config.TEXT_PlayerDisconnectMessage +
+                $"* **({api.Server.Players.Count(x => x.PlayerUID != byPlayer.PlayerUID && x.ConnectionState == EnumClientState.Playing)}" +
+                $"/{api.Server.Config.MaxClients})**");
         }
 
         private void Event_PlayerJoin(IServerPlayer byPlayer)
         {
             DiscordWatcher.connectTimeDict.Add(byPlayer.PlayerUID, DateTime.UtcNow);
 
-            sendDiscordMessage($"{byPlayer.PlayerName} has connected to the server! " +
-                $"({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
-                $"/{api.Server.Config.MaxClients})");
+            sendDiscordMessage($"*{byPlayer.PlayerName} " + this.config.TEXT_PlayerJoinMessage +
+                $"* **({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
+                $"/{api.Server.Config.MaxClients})**");
         }
 
         private void sendDiscordMessage(string message = "", DiscordEmbed embed = null)
         {
-            if (this.client == null || this.discordChannel == null)
-            {
-                this.api.Server.LogError("vschatbot: Tried to send message but was not connected to Discord... Did something go wrong, or were we never connected to Discord in the first place? (check your config)");
-                return;
-            }
-
             this.client.SendMessageAsync(this.discordChannel, message, embed: embed);
         }
 
-        private async Task<bool> LoginAsync()
+        private async Task MainAsync(ICoreServerAPI api)
         {
-            var client = new DiscordClient(new DiscordConfiguration()
+            this.client = new DiscordClient(new DiscordConfiguration()
             {
                 Token = this.config.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 LogLevel = LogLevel.Debug
             });
+
+            this.client.Ready += Client_Ready;
+            if (this.config.RelayGameToDiscord)
+                this.client.MessageCreated += Client_MessageCreated;
+            this.client.ClientErrored += Client_ClientErrored;
 
             var commandConfiguration = new CommandsNextConfiguration
             {
@@ -323,19 +312,8 @@ namespace vschatbot.src
             catch (Exception)
             {
                 this.api.Server.LogError("vschatbot: Failed to login using token...");
-                return false;
+                return;
             }
-
-            this.client = client;
-            return true;
-        }
-
-        private async Task MainAsync(ICoreServerAPI api)
-        {
-            this.client.Ready += Client_Ready;
-            if (this.config.RelayGameToDiscord)
-                this.client.MessageCreated += Client_MessageCreated;
-            this.client.ClientErrored += Client_ClientErrored;
 
             await Task.Delay(-1);
         }
@@ -435,15 +413,16 @@ namespace vschatbot.src
                 content = content.Replace(match.Groups[0].Value, match.Groups[1].Value);
             }
 
-            api.SendMessageToGroup(GlobalConstants.GeneralChatGroup, $"Discord|<strong>{e.Author.Username}</strong>: {content.Replace(">", "&gt;").Replace("<", "&lt;")}", EnumChatType.OthersMessage);
+            api.SendMessageToGroup(GlobalConstants.GeneralChatGroup, $"[Disc]<strong>{e.Author.Username}</strong>» {content.Replace(">", "&gt;").Replace("<", "&lt;")}", EnumChatType.OthersMessage);
 
             return Task.FromResult(true);
         }
 
         private Task Client_Ready(ReadyEventArgs e)
         {
-            this.api.Server.LogNotification("vschatbot: Connected to discord and ready!");
+            this.api.Server.LogNotification("vschatbot: connected to discord and ready!");
 
+            this.discordChannel = this.client.GetChannelAsync(this.config.ChannelId).ConfigureAwait(false).GetAwaiter().GetResult();
             this.discordChannel = this.client.GetChannelAsync(this.config.ChannelId).ConfigureAwait(false).GetAwaiter().GetResult();
 
             return Task.FromResult(true);
@@ -461,4 +440,5 @@ namespace vschatbot.src
             }
         }
     }
+    
 }

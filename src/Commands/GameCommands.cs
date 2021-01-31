@@ -1,4 +1,4 @@
-using DSharpPlus.CommandsNext;
+﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
@@ -137,24 +137,6 @@ namespace vschatbot.src.Commands
             embed.WithDescription(descriptionStringBuilder.ToString())
                  .Build();
             await context.RespondAsync("", embed: embed);
-        }
-
-        [command("leaderboards")]
-        [Description("Shows the leaderboards for a particular type of stat, for all players on the server.")]
-        public async Task LeaderboardsAsync(CommandContext context, [Description("The stat to show the leaderboards for. Defaults to 'death'")] string stat = "death")
-        {
-            var embed = new DiscordEmbedBuilder().WithTitle($"Server leaderboard for {stat}");
-            var playerStringBuilder = new StringBuilder();
-
-            switch( stat )
-            {
-                case "death":
-                    
-                break;
-
-                default:
-                break;
-            }
         }
     }
 }

@@ -36,8 +36,8 @@ using Vintagestory.API.Common;
 [assembly: AssemblyVersion("1.0.*")]
 
 [assembly: ModInfo( "vschatbot", "vschatbot",
-    Version = "1.0.0",
+    Version = "1.1.2-test",
     Description = "To be added",
-    Authors = new[] { "Unkown" })]
+    Authors = new[] { "Capsup", "EvilToaster" })]
 
  [assembly: ModDependency("game")]

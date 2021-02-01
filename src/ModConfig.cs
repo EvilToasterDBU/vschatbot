@@ -45,7 +45,11 @@ namespace vschatbot.src
         public string TEXT_DeathMessageLocust { get; set; } = "by a locust.";
         public string TEXT_DeathMessageDrifter { get; set; } = "by a drifter.";
         public string TEXT_DeathMessageBee { get; set; } = "by a swarm of bees.";
-        public string TEXT_DeathMessageMob { get; set; } = "by a swarm of bees.";
+        public string TEXT_DeathMessageMob { get; set; } = "by mob.";
+        public string TEXT_DeathMessageShintorickae { get; set; } = "by Shintorickae.";
+        public string TEXT_DeathMessageTickling { get; set; } = "by Tickling.";
+        public string TEXT_DeathMessageTurtor { get; set; } = "by Turtor.";
+        public string TEXT_DeathMessageBrower { get; set; } = "by Brower.";
         public string TEXT_DeathMessageExplosion { get; set; } = "when they stood by a bomb.";
         public string TEXT_DeathMessageMachine { get; set; } = "when they got their hands stuck in a machine.";
         public string TEXT_DeathMessageUnknownS { get; set; } = "when they encountered the unknown.";

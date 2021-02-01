@@ -192,6 +192,18 @@ namespace vschatbot.src
                             case "beemob":
                                 deathMessage += this.config.TEXT_DeathMessageBee;
                                 break;
+                            case "shintorickae":
+                                deathMessage += this.config.TEXT_DeathMessageShintorickae;
+                                break;
+                            case "tickling":
+                                deathMessage += this.config.TEXT_DeathMessageTickling;
+                                break;
+                            case "turtor":
+                                deathMessage += this.config.TEXT_DeathMessageTurtor;
+                                break;
+                            case "brower":
+                                deathMessage += this.config.TEXT_DeathMessageBrower;
+                                break;
                             default:
                                 deathMessage += this.config.TEXT_DeathMessageMob;
                                 break;

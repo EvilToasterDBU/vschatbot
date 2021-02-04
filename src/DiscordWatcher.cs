@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,7 @@ using vschatbot.src.Utils;
 using vschatbot.src.Commands;
 using Vintagestory.API.Util;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace vschatbot.src
 {
@@ -52,6 +54,15 @@ namespace vschatbot.src
 
         public override void StartServerSide(ICoreServerAPI api)
         {
+            try
+            {
+                api.World.Logger.EntryAdded += Logger_EntryAdded;
+            }
+            catch
+            {
+                api.Server.LogError("vschatbot: Failed to initiate event listener!");
+                return;
+            }
             try
             {
                 this.config = api.LoadModConfig<ModConfig>(CONFIGNAME);
@@ -90,6 +101,13 @@ namespace vschatbot.src
             }
             if (this.config.SendDeathMessages)
                 this.api.Event.PlayerDeath += Event_PlayerDeath;
+        }
+
+        private void Logger_EntryAdded(EnumLogType logType, string message, params object[] args)
+        {
+            System.IO.StreamWriter writer = new System.IO.StreamWriter("log.txt", true);
+            writer.WriteLine($"|{DateTime.Now.Hour}:{DateTime.Now.Minute}:{DateTime.Now.Second}| [{logType}] {message}");
+            writer.Close();
         }
 
         //Shout-out to Milo for texts

@@ -37,6 +37,30 @@ namespace vschatbot.src.Commands
             return $"{(time > 120 ? (time / 60) + " hours and " + (time % 60) : time.ToString())} minute{(time % 60 == 1 ? "" : "s")}";
         }
 
+        private string ShowFile()
+        {
+
+           string[] strings = System.IO.File.ReadAllLines("log.txt");
+            return strings[strings.Length - 1];
+                
+        }
+
+        private void CleanFile()
+        {
+            System.IO.File.WriteAllText("log.txt", String.Empty);
+        }
+
+        [Command("showdebug")]
+        [Aliases("message")]
+        [Description("Returns the important message")]
+        public async Task ShowDebug(CommandContext context)
+        {
+            var embed = new DiscordEmbedBuilder().WithTitle("Последняя запись в логе:")
+                .WithDescription(ShowFile()).Build();
+            CleanFile();
+            await context.RespondAsync("", embed: embed);
+        }
+
         [Command("players")]
         [Aliases("onlineplayers", "playerlist", "online", "list")]
         [Description("Shows the currently online players and their play time")]

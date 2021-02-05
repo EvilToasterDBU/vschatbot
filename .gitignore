@@ -360,3 +360,4 @@ MigrationBackup/
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio
 /*.sln
 /.gitignore
+/packages.7z

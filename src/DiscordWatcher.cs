@@ -27,7 +27,7 @@ namespace vschatbot.src
         public const string PLAYERDATA_TOTALDEATHCOUNT = "VSCHATBOT_TOTALDEATHCOUNT";
 
         public static ICoreServerAPI Api;
-
+       
         private ICoreServerAPI api
         {
             get => Api;
@@ -81,8 +81,9 @@ namespace vschatbot.src
             this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
             if (this.config.RelayDiscordToGame)
                 this.api.Event.PlayerChat += Event_PlayerChat;
-            this.api.Event.PlayerJoin += Event_PlayerJoin;
+            
             this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
+            this.api.Event.PlayerNowPlaying += Event_PlayerNowPlaying;
             if (this.config.SendServerMessages)
             {
                 this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
@@ -91,6 +92,16 @@ namespace vschatbot.src
             if (this.config.SendDeathMessages)
                 this.api.Event.PlayerDeath += Event_PlayerDeath;
         }
+
+        private void Event_PlayerNowPlaying(IServerPlayer byPlayer)
+        {
+            DiscordWatcher.connectTimeDict.Add(byPlayer.PlayerUID, DateTime.UtcNow);
+
+            sendDiscordMessage($"*{byPlayer.PlayerName} " + this.config.TEXT_PlayerJoinMessage +
+                $"* **({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
+                $"/{api.Server.Config.MaxClients})**");
+        }
+
 
         //Shout-out to Milo for texts
         private void Event_PlayerDeath(IServerPlayer byPlayer, DamageSource damageSource)
@@ -277,15 +288,6 @@ namespace vschatbot.src
                 $"/{api.Server.Config.MaxClients})**");
         }
 
-        private void Event_PlayerJoin(IServerPlayer byPlayer)
-        {
-            DiscordWatcher.connectTimeDict.Add(byPlayer.PlayerUID, DateTime.UtcNow);
-
-            sendDiscordMessage($"*{byPlayer.PlayerName} " + this.config.TEXT_PlayerJoinMessage +
-                $"* **({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
-                $"/{api.Server.Config.MaxClients})**");
-        }
-
         private void sendDiscordMessage(string message = "", DiscordEmbed embed = null)
         {
             this.client.SendMessageAsync(this.discordChannel, message, embed: embed);
@@ -435,8 +437,6 @@ namespace vschatbot.src
             this.api.Server.LogNotification("vschatbot: connected to discord and ready!");
 
             this.discordChannel = this.client.GetChannelAsync(this.config.ChannelId).ConfigureAwait(false).GetAwaiter().GetResult();
-            this.discordChannel = this.client.GetChannelAsync(this.config.ChannelId).ConfigureAwait(false).GetAwaiter().GetResult();
-
             return Task.FromResult(true);
         }
 
@@ -451,6 +451,6 @@ namespace vschatbot.src
                 sendDiscordMessage($"**{byPlayer.PlayerName}**: {foundText.Groups[1].Value}");
             }
         }
-    }
-    
+    } 
+
 }

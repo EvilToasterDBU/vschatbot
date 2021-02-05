@@ -93,8 +93,8 @@ namespace vschatbot.src
             this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
             if (this.config.RelayDiscordToGame)
                 this.api.Event.PlayerChat += Event_PlayerChat;
-            this.api.Event.PlayerJoin += Event_PlayerJoin;
             this.api.Event.PlayerDisconnect += Event_PlayerDisconnect;
+            this.api.Event.PlayerNowPlaying += Event_PlayerNowPlaying;
             if (this.config.SendServerMessages)
             {
                 this.api.Event.ServerRunPhase(EnumServerRunPhase.GameReady, Event_ServerStartup);
@@ -102,6 +102,15 @@ namespace vschatbot.src
             }
             if (this.config.SendDeathMessages)
                 this.api.Event.PlayerDeath += Event_PlayerDeath;
+        }
+
+        private void Event_PlayerNowPlaying(IServerPlayer byPlayer)
+        {
+            DiscordWatcher.connectTimeDict.Add(byPlayer.PlayerUID, DateTime.UtcNow);
+
+            sendDiscordMessage($"*{byPlayer.PlayerName} " + this.config.TEXT_PlayerJoinMessage +
+                $"* **({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
+                $"/{api.Server.Config.MaxClients})**");
         }
 
         private void Logger_EntryAdded(EnumLogType logType, string message, params object[] args)
@@ -301,15 +310,6 @@ namespace vschatbot.src
 
             sendDiscordMessage($"*{byPlayer.PlayerName} " + this.config.TEXT_PlayerDisconnectMessage +
                 $"* **({api.Server.Players.Count(x => x.PlayerUID != byPlayer.PlayerUID && x.ConnectionState == EnumClientState.Playing)}" +
-                $"/{api.Server.Config.MaxClients})**");
-        }
-
-        private void Event_PlayerJoin(IServerPlayer byPlayer)
-        {
-            DiscordWatcher.connectTimeDict.Add(byPlayer.PlayerUID, DateTime.UtcNow);
-
-            sendDiscordMessage($"*{byPlayer.PlayerName} " + this.config.TEXT_PlayerJoinMessage +
-                $"* **({api.Server.Players.Count(x => x.ConnectionState != EnumClientState.Offline)}" +
                 $"/{api.Server.Config.MaxClients})**");
         }
 

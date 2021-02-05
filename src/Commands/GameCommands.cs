@@ -25,7 +25,6 @@ namespace vschatbot.src.Commands
         public async Task GetTimeAsync(CommandContext context)
         {
             var calendar = api.World.Calendar;
-
             var embed = new DiscordEmbedBuilder().WithTitle("Time and season:")
                 .WithDescription($"{calendar.PrettyDate()}{Environment.NewLine}It is currently {Enum.GetName(typeof(EnumSeason), calendar.GetSeason(api.World.DefaultSpawnPosition.AsBlockPos))}.")
                 .Build();

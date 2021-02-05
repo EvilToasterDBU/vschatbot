@@ -105,9 +105,16 @@ namespace vschatbot.src
 
         private void Logger_EntryAdded(EnumLogType logType, string message, params object[] args)
         {
-            System.IO.StreamWriter writer = new System.IO.StreamWriter("log.txt", true);
-            writer.WriteLine($"|{DateTime.Now.Hour}:{DateTime.Now.Minute}| [{logType}] {message}");
-            writer.Close();
+            try
+            {
+                System.IO.StreamWriter writer = new System.IO.StreamWriter("log.txt", true);
+                writer.WriteLine($"|{DateTime.Now.Hour}:{DateTime.Now.Minute}| [{logType}] {message}");
+                writer.Close();
+            }
+            catch
+            {
+                return;
+            }            
         }
 
         //Shout-out to Milo for texts

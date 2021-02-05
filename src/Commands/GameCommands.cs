@@ -17,6 +17,7 @@ namespace vschatbot.src.Commands
     public class GameCommands
     {
         private ICoreServerAPI api = DiscordWatcher.Api;
+        LogCountData methods = new LogCountData();
 
         [Command("time")]
         [Aliases("season")]
@@ -37,28 +38,86 @@ namespace vschatbot.src.Commands
             return $"{(time > 120 ? (time / 60) + " hours and " + (time % 60) : time.ToString())} minute{(time % 60 == 1 ? "" : "s")}";
         }
 
-        private string ShowFile()
+        [Command("showlast")]
+        [Aliases("showdebuglog")]
+        [Description("Returns the last n debug messages")]
+        public async Task ShowDebug(CommandContext context, [Description("Count of last debug messages")] int count)
         {
-
-           string[] strings = System.IO.File.ReadAllLines("log.txt");
-            return strings[strings.Length - 1];
-                
-        }
-
-        private void CleanFile()
-        {
-            System.IO.File.WriteAllText("log.txt", String.Empty);
-        }
-
-        [Command("showdebug")]
-        [Aliases("message")]
-        [Description("Returns the important message")]
-        public async Task ShowDebug(CommandContext context)
-        {
-            var embed = new DiscordEmbedBuilder().WithTitle("Последняя запись в логе:")
-                .WithDescription(ShowFile()).Build();
-            CleanFile();
+            var embed = new DiscordEmbedBuilder().Build();
+            string last_log = methods.ShowLast(count);
+            if (last_log == null)
+            {
+                embed = new DiscordEmbedBuilder()
+                .WithTitle("Не удается получить доступ к файлу.")
+                .WithColor(DiscordColor.Red)
+                .WithDescription("Файл недоступен!")
+                .Build();
+            }
+            else
+            {
+                if (count > 40)
+                {
+                    embed = new DiscordEmbedBuilder().WithTitle("Слишком большое число логов!")
+                        .WithColor(DiscordColor.Red)
+                        .WithDescription("Не больше 40")
+                        .Build();
+                }
+                else
+                {
+                    embed = new DiscordEmbedBuilder().WithTitle($"Последние {count} записей в логе (если есть):")
+                    .WithDescription(last_log).Build();
+                }
+            }
+                     
             await context.RespondAsync("", embed: embed);
+        }
+
+        [Command("clearlog")]
+        [Aliases("clearfile")]
+        [Description("Clears the log file")]
+        public async Task ClearFile(CommandContext context)
+        {
+            methods.Clear_Log();
+            var embed = new DiscordEmbedBuilder()
+                .WithTitle("Файл лога очищен.")
+                .WithColor(DiscordColor.Green)
+                .WithDescription("Файл лога пуст!")
+                .Build();
+            await context.RespondAsync("", embed: embed);
+        }
+
+        [Command("searchlog")]
+        [Aliases("findbystring")]
+        [Description("Find a log by string")]
+        public async Task Show_Log_Time(CommandContext context, [Description("Word for searching")] string word)
+        {
+            int count = 0;
+            string logs = methods.Find_by_time(word, out count);
+            var embed = new DiscordEmbedBuilder().Build();
+            if (logs == null)
+            {
+                embed = new DiscordEmbedBuilder()
+                .WithTitle("Не удается получить доступ к файлу.")
+                .WithColor(DiscordColor.Red)
+                .WithDescription("Файл недоступен!")
+                .Build();
+            }
+            else
+            {
+                embed = new DiscordEmbedBuilder()
+                .WithTitle($"По запросу {word} найдено {count} записей. Последние:")
+                .WithDescription(logs)
+                .Build();
+            }            
+            await context.RespondAsync("", embed: embed);
+        }
+
+        [Command("getfile")]
+        [Aliases("getlogfile")]
+        [Description("Get a log file")]
+        public async Task Get_log_file(CommandContext context)
+        {
+            await context.RespondWithFileAsync("log.txt");
         }
 
         [Command("players")]

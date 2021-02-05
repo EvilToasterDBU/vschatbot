@@ -79,6 +79,7 @@
     <Compile Include="src\DiscordWatcher.cs" />
     <Compile Include="src\ModConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\Models\LogCountData.cs" />
     <Compile Include="src\Models\OnlinePlayerData.cs" />
     <Compile Include="src\Utils\ArrayExtensions.cs" />
     <Compile Include="src\Utils\ObjectExtensions.cs" />

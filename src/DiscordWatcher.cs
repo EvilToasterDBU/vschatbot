@@ -427,7 +427,7 @@ namespace vschatbot.src
                 content = content.Replace(match.Groups[0].Value, match.Groups[1].Value);
             }
 
-            api.SendMessageToGroup(GlobalConstants.GeneralChatGroup, $"[Disc]<strong>{e.Author.Username}</strong>» {content.Replace(">", "&gt;").Replace("<", "&lt;")}", EnumChatType.OthersMessage);
+            api.SendMessageToGroup(GlobalConstants.GeneralChatGroup, $"<font color='blue'>[Disc]</color><strong>{e.Author.Username}</strong>» {content.Replace(" > ", "&gt;").Replace("<", "&lt;")}", EnumChatType.OthersMessage);
 
             return Task.FromResult(true);
         }

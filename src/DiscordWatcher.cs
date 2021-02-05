@@ -39,6 +39,7 @@ namespace vschatbot.src
         private DiscordClient client;
         private CommandsNextModule commands;
         private DiscordChannel discordChannel;
+        private DiscordChannel discordChannelConsole;
 
         private TemporalStormRunTimeData lastData;
         private SystemTemporalStability temporalSystem;
@@ -110,6 +111,7 @@ namespace vschatbot.src
                 System.IO.StreamWriter writer = new System.IO.StreamWriter("log.txt", true);
                 writer.WriteLine($"|{DateTime.Now.Hour}:{DateTime.Now.Minute}| [{logType}] {message}");
                 writer.Close();
+                discordChannelConsole.SendMessageAsync($"`|{DateTime.Now.Hour}:{DateTime.Now.Minute}| [{logType}] {message}`");
             }
             catch
             {
@@ -451,7 +453,7 @@ namespace vschatbot.src
             }
 
             api.SendMessageToGroup(GlobalConstants.GeneralChatGroup, $"[Disc]<strong>{e.Author.Username}</strong>» {content.Replace(">", "&gt;").Replace("<", "&lt;")}", EnumChatType.OthersMessage);
-
+            this.api.Server.LogNotification($"[Disc]{e.Author.Username}» {content.Replace(">", "&gt;").Replace("<", "&lt;")}");
             return Task.FromResult(true);
         }
 
@@ -460,7 +462,7 @@ namespace vschatbot.src
             this.api.Server.LogNotification("vschatbot: connected to discord and ready!");
 
             this.discordChannel = this.client.GetChannelAsync(this.config.ChannelId).ConfigureAwait(false).GetAwaiter().GetResult();
-            this.discordChannel = this.client.GetChannelAsync(this.config.ChannelId).ConfigureAwait(false).GetAwaiter().GetResult();
+            this.discordChannelConsole = this.client.GetChannelAsync(this.config.ConsoleChannelId).ConfigureAwait(false).GetAwaiter().GetResult();
 
             return Task.FromResult(true);
         }

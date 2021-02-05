@@ -40,8 +40,8 @@ namespace vschatbot.src.Commands
 
         [Command("showlast")]
         [Aliases("showdebuglog")]
-        [Description("Returns the last n debug messages")]
-        public async Task ShowDebug(CommandContext context, [Description("Count of last debug messages")] int count)
+        [Description("Показать n последних логов")]
+        public async Task ShowDebug(CommandContext context, [Description("Количество последних логов")] int count)
         {
             var embed = new DiscordEmbedBuilder().Build();
             string last_log = methods.ShowLast(count);
@@ -74,7 +74,7 @@ namespace vschatbot.src.Commands
 
         [Command("clearlog")]
         [Aliases("clearfile")]
-        [Description("Clears the log file")]
+        [Description("Очистить файл логов")]
         public async Task ClearFile(CommandContext context)
         {
             methods.Clear_Log();
@@ -88,8 +88,8 @@ namespace vschatbot.src.Commands
 
         [Command("searchlog")]
         [Aliases("findbystring")]
-        [Description("Find a log by string")]
-        public async Task Show_Log_Time(CommandContext context, [Description("Word for searching")] string word)
+        [Description("Найти лог по запросу")]
+        public async Task Show_Log_Time(CommandContext context, [Description("Слово для поиска")] string word)
         {
             int count = 0;
             string logs = methods.Find_by_time(word, out count);
@@ -114,7 +114,7 @@ namespace vschatbot.src.Commands
 
         [Command("getfile")]
         [Aliases("getlogfile")]
-        [Description("Get a log file")]
+        [Description("Получить файл лога")]
         public async Task Get_log_file(CommandContext context)
         {
             await context.RespondWithFileAsync("log.txt");

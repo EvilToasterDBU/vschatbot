@@ -77,7 +77,6 @@ namespace vschatbot.src
 
             this.api = api;
             Task.Run(async () => await this.MainAsync(api));
-
             this.api.Event.SaveGameLoaded += Event_SaveGameLoaded;
             if (this.config.RelayDiscordToGame)
                 this.api.Event.PlayerChat += Event_PlayerChat;
@@ -197,7 +196,19 @@ namespace vschatbot.src
                             case "locust":
                                 deathMessage += this.config.TEXT_DeathMessageLocust;
                                 break;
-                            case "drifter":
+                            case "drifter-normal":
+                                deathMessage += this.config.TEXT_DeathMessageDrifter;
+                                break;
+                            case "drifter-deep":
+                                deathMessage += this.config.TEXT_DeathMessageDrifter;
+                                break;
+                            case "drifter-tainted":
+                                deathMessage += this.config.TEXT_DeathMessageDrifter;
+                                break;
+                            case "drifter-corrupt":
+                                deathMessage += this.config.TEXT_DeathMessageDrifter;
+                                break;
+                            case "drifter-nightmare":
                                 deathMessage += this.config.TEXT_DeathMessageDrifter;
                                 break;
                             case "beemob":
